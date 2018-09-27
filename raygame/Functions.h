@@ -1,5 +1,7 @@
 #pragma once
 #include <iostream>
+#include <fstream>
+#include <string>
 #include <time.h>
 #include <string>
 #include "raylib.h"
@@ -13,11 +15,12 @@ public:
 	Color color;
 	float Speed;
 	int Score;
+	int HighScore;
 	Rectangle Rect;
-	void TakeDamage()
-	{
-		Health--;
-	}
+	int AnimationTimer;
+	int CurrentFrame = 1;
+	int TotalFrames = 3;
+	string Shoot;
 };
 class Rock
 {
@@ -36,6 +39,13 @@ public:
 	Rectangle Rect;
 	Player player;
 };
+class EnemyBullet
+{
+public:
+	int Damage;
+	int Speed;
+	Rectangle Rect;
+};
 class Star
 {
 public:
@@ -53,11 +63,13 @@ public:
 	bool Instantiated;
 	Vector2 Origin;
 	Vector2 Direction;
+	int FireRate;
+	time_t Time = time(0);
 };
 
 void MovePlayer(Player& player);
-void DrawPlayer(Player& player);
-void DrawingTheScreen(Player& player, Rock * Rocks, int RockSize,
+void DrawPlayer(Player& player, int * Timer, Texture2D PlayersTexture);
+void DrawingTheScreen( Rock * Rocks, int RockSize,
 	Bullet * Bullets, int BulletSize, Rock * smallRocks, int smallRockSize);
 void InstantiateRock(Rock * Arr, int * Size, int RockSize);
 void DrawRocks(Rock * Arr, int Size);
@@ -70,11 +82,23 @@ void InstantiateStar(Star * Arr, int * star);
 void UpdateStar(Star * Arr, int star);
 void DrawStar(Star * Arr, int Size);
 void MoveStar(Star *Arr, int Size);
-void DisplayScore(int Score);
+void DisplayScore(int Score, int HigherScore);
 void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score, int maxEnemies);
 void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score);
 void DrawEnemy(Enemy * enemies);
 void BulletHandler(Bullet * bullet, int * bullets, Enemy * enemies);
 int GetEnemies(Enemy * enemies);
+void Animation(Vector2 Pos, int *Frame, int totalFrames,
+	Texture2D texture, int * Timer, float TimePerFrame);
+void EnemyMove(Enemy * enemies);
+void EnemyMoveBullet(EnemyBullet *Arr, int Size);
+void EnemyDrawBullet(EnemyBullet * Arr, int Size);
+void EnemyInstantiateBullet(EnemyBullet * Arr, int * Size, Enemy enemies);
+void EnemyBulletHandler(EnemyBullet * bullet, int * bullets);
+void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Texture2D PlayerTexture);
+
+
+void LoadGame(Player *player);
+void SaveGame(Player player);
 //	int screenWidth = 800;
 //  int screenHeight = 450;
