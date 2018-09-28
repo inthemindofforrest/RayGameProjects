@@ -20,7 +20,11 @@ public:
 	int AnimationTimer;
 	int CurrentFrame = 1;
 	int TotalFrames = 3;
+	int ShootingCooldown;
 	string Shoot;
+	Texture2D Texture = LoadTexture("Rocket.png");
+	Texture2D ForceFieldTexture = LoadTexture("ForceFieldUpgrade.png");
+	int ForceFieldTimer = 600;
 };
 class Rock
 {
@@ -65,10 +69,29 @@ public:
 	Vector2 Direction;
 	int FireRate;
 	time_t Time = time(0);
+
+	int Frame = 1;
+	int TotalFrames = 3;
+	int Timer;
+	int deathTimer = 0;
+	bool IsDead = false;
+	Texture2D Texture = LoadTexture("Alien.png");
+};
+class POWERUP
+{
+public:
+	string PowerUpType;
+	int UpgradeAmount;
+	int speed;
+	int Frame;
+	int MaxFrames;
+	int AnimationTimer = 1;
+	Rectangle Rect;
+	Texture2D Texture;
 };
 
 void MovePlayer(Player& player);
-void DrawPlayer(Player& player, int * Timer, Texture2D PlayersTexture);
+void DrawPlayer(Player& player, int * Timer);
 void DrawingTheScreen( Rock * Rocks, int RockSize,
 	Bullet * Bullets, int BulletSize, Rock * smallRocks, int smallRockSize);
 void InstantiateRock(Rock * Arr, int * Size, int RockSize);
@@ -83,9 +106,10 @@ void UpdateStar(Star * Arr, int star);
 void DrawStar(Star * Arr, int Size);
 void MoveStar(Star *Arr, int Size);
 void DisplayScore(int Score, int HigherScore);
-void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score, int maxEnemies);
+void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score, 
+	Vector2 * scoreMultiplyerint, int  maxEnemies);
 void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score);
-void DrawEnemy(Enemy * enemies);
+void DrawEnemy(Enemy * enemies, Vector2 * scoreMultiplyer);
 void BulletHandler(Bullet * bullet, int * bullets, Enemy * enemies);
 int GetEnemies(Enemy * enemies);
 void Animation(Vector2 Pos, int *Frame, int totalFrames,
@@ -95,8 +119,10 @@ void EnemyMoveBullet(EnemyBullet *Arr, int Size);
 void EnemyDrawBullet(EnemyBullet * Arr, int Size);
 void EnemyInstantiateBullet(EnemyBullet * Arr, int * Size, Enemy enemies);
 void EnemyBulletHandler(EnemyBullet * bullet, int * bullets);
-void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Texture2D PlayerTexture);
-
+void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Enemy *enemies);
+void PowerUpHandler(POWERUP *PowerUp, Player *player);
+bool AnimateOnce(Vector2 Pos, int *Frame, int totalFrames,
+	Texture2D texture, int * Timer, float TimePerFrame);
 
 void LoadGame(Player *player);
 void SaveGame(Player player);

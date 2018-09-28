@@ -37,5 +37,23 @@
     <Image Include="Rocket.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="HealthUpgrade.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Alien.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="StrongerAlien.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="StrongestAlien.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="BulletUpgrade.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="ForceFieldUpgrade.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

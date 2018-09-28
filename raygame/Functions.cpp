@@ -9,17 +9,19 @@ void DrawingTheScreen( Rock * Rocks, int RockSize,
 	MoveRock(Rocks, RockSize);
 }
 
-void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Texture2D PlayerTexture)
+void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Enemy *enemies)
 {
-	DrawPlayer(*player, Timer, PlayerTexture);
+	DrawPlayer(*player, Timer);
 	MovePlayer(*player);
 	for (int i = 0; i < 100; i++)
 	{
 		if (CheckCollisionRecs(bullets[i].Rect, (*player).Rect))
 		{
+
 			bullets[i].Rect.x = 0;
 			bullets[i].Rect.y = 0;
-			(*player).Health--;
+			if((*player).ForceFieldTimer > 600)
+				(*player).Health--;
 		}
 	}
 	if ((*player).Health <= 0)
@@ -36,10 +38,15 @@ void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Texture2D
 
 		SetMousePosition({ 100,100 });
 
+		for (int i = 0; i < 100; i++)
+		{
+			enemies[i].Instantiated = false;
+		}
 
 		SaveGame(*player);
 	}
-
+	if ((*player).Health > 3)
+		(*player).Health = 3;
 }
 
 void MovePlayer(Player& player)
@@ -95,18 +102,23 @@ void MovePlayer(Player& player)
 		player.Rect.y = (440.0f - player.Rect.height);
 	}
 }
-void DrawPlayer(Player& player, int * Timer, Texture2D PlayersTexture)
+void DrawPlayer(Player& player, int * Timer)
 {
 	//23x8
-
 	Animation({ player.Rect.x, player.Rect.y }, &player.CurrentFrame,
-	player.TotalFrames, PlayersTexture, Timer, 10);
+	player.TotalFrames, player.Texture, Timer, 10);
 	//DrawRectangle(player.Rect.x, player.Rect.y, player.Rect.width, player.Rect.height, player.color);
 	//Draw Health of the player
 	for (int i = 0; i < player.Health; i++)
 	{
 		DrawRectangle(10 + (i * 20) + 5, 430, 10, 10, RED);
 	}
+
+	if(player.ForceFieldTimer < 600)
+		Animation({ player.Rect.x, player.Rect.y},
+			&player.CurrentFrame,
+			player.TotalFrames, player.ForceFieldTexture, Timer, 10);
+		//DrawTexture(player.ForceFieldTexture, player.Rect.x, player.Rect.y, WHITE);
 
 }
 
@@ -229,38 +241,68 @@ int RandomNumber(int min, int max)
 {
 	return (rand() % max + min);
 }
+int RandomNumberNegToPos(int min, int max)
+{
+	int Operation = RandomNumber(0, 1);
+	if(Operation)
+		return (rand() % max + min);
+	else
+		return (rand() % max + min) * - 1;
+}
 
-void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score, int maxEnemies)
+void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score,Vector2 *scoreMultiplyer, int maxEnemies)
 {
 	string Health;
-
 	for (int i = 0; i < 100; i++)
 	{
 		for (int j = 0; j < 100; j++)
 		{
-			if (CheckCollisionRecs(bullets[i].Rect, enemies[j].Rect) && enemies[j].Instantiated)
+			if (enemies[j].Instantiated)
 			{
-				enemies[j].Health--;
-				bullets[i].Rect.height = 0;
-				bullets[i].Rect.width = 0;
-				bullets[i].Rect.x = 0;
-				bullets[i].Rect.y = 0;
-				if (enemies[j].Health <= 0)
+				if (enemies[j].Health < 0)
+					enemies[j].Health == 0;
+				if (CheckCollisionRecs(bullets[i].Rect, enemies[j].Rect))
 				{
-					if (ColorToInt(enemies[j].color) == ColorToInt(RED))
-						*Score += 20;
-					else if (ColorToInt(enemies[j].color) == ColorToInt(YELLOW))
-						*Score += 10;
-					else if (ColorToInt(enemies[j].color) == ColorToInt(GREEN))
-						*Score += 2;
-					enemies[j].Rect.height = 0;
-					enemies[j].Rect.width = 0;
-					enemies[j].Rect.x = 0;
-					enemies[j].Rect.y = 0;
-					enemies[j].Speed = 0;
-					enemies[j].Instantiated = false;
-
+					enemies[j].Health--;
+					bullets[i].Rect.height = 0;
+					bullets[i].Rect.width = 0;
+					bullets[i].Rect.x = 0;
+					bullets[i].Rect.y = 0;
+					if (enemies[j].Health <= 0)
+					{
+						if (ColorToInt(enemies[j].color) == ColorToInt(RED))
+							*Score += 20;
+						else if (ColorToInt(enemies[j].color) == ColorToInt(YELLOW))
+							*Score += 10;
+						else if (ColorToInt(enemies[j].color) == ColorToInt(GREEN))
+							*Score += 2;
+						(*scoreMultiplyer).y = j;
+						enemies[j].Texture = LoadTexture("AlienDeath.png");
+					}
 				}
+				if (enemies[j].Rect.y >= (450 - enemies[i].Rect.height) && enemies[i].IsDead == false)
+				{
+					enemies[j].Texture = LoadTexture("AlienDeathDissolve.png");
+					enemies[j].TotalFrames = 6;
+					enemies[j].IsDead = true;
+				}
+			
+
+				for (int k = 0; k < 100; k++)
+				{
+					if (CheckCollisionRecs(enemies[j].Rect, enemies[k].Rect) && k != j &&
+						enemies[j].Health <= 0)
+					{
+						if (enemies[k].Health > 0)
+						{
+							*Score += 2 * (*scoreMultiplyer).x;
+							(*scoreMultiplyer).x++;
+						}
+						enemies[k].Health = 0;
+						
+					}
+				}
+
 			}
 		}
 		Health.append(to_string(enemies[i].Health));
@@ -277,24 +319,44 @@ void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score, i
 		InstanciateEnemy(enemies, enemy, Score);
 	}
 	EnemyMove(enemies);
-	DrawEnemy(enemies);
+	DrawEnemy(enemies, scoreMultiplyer);
 }
-void DrawEnemy(Enemy * enemies)
+void DrawEnemy(Enemy * enemies, Vector2 * scoreMultiplyer)
 {
 	for (int i = 0; i < 100; i++)
-		DrawRectangle(enemies[i].Rect.x, enemies[i].Rect.y,
-			enemies[i].Rect.width, enemies[i].Rect.height, enemies[i].color);
+		/*DrawRectangle(enemies[i].Rect.x, enemies[i].Rect.y,
+			enemies[i].Rect.width, enemies[i].Rect.height, enemies[i].color);*/
+		if (enemies[i].Instantiated)
+		{
+			if (enemies[i].IsDead == false)
+				Animation({ enemies[i].Rect.x, enemies[i].Rect.y }, &enemies[i].Frame,
+					enemies[i].TotalFrames, enemies[i].Texture, &enemies[i].Timer, 10);
+			else
+				if (AnimateOnce({ enemies[i].Rect.x, enemies[i].Rect.y }, &enemies[i].Frame,
+					enemies[i].TotalFrames, enemies[i].Texture, &enemies[i].Timer, 10))
+				{
+					enemies[i].Instantiated = false;
+					enemies[i].IsDead = true;
+					enemies[i].TotalFrames = 3;
+					if ((*scoreMultiplyer).y == i)
+					{
+						(*scoreMultiplyer).y = 0;
+						(*scoreMultiplyer).x = 0;
+					}
 
+				}
+		}
 }
 void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
 {
 	if (*Score % 50 == 0 && *Score != 0)
 	{
-		Enemy newEnemy{ 15, RED, (float)RandomNumber(1,3) / 3,{ RandomNumber(350,400),RandomNumber(0,400),
+		Enemy newEnemy{ 15, RED, (float)RandomNumber(1,3) / 3,{ RandomNumber(350,400),RandomNumber(100,250),
 			40,60 }, true,{ newEnemy.Rect.x, newEnemy.Rect.y },{ 0,0 }, RandomNumber(1,5), time(0) };
 		enemies[*enemy] = newEnemy;
 		enemies[*enemy].Origin.x = newEnemy.Rect.x;
 		enemies[*enemy].Origin.y = newEnemy.Rect.y;
+		enemies[*enemy].Texture = LoadTexture("StrongestAlien.png");
 		*enemy += 1;
 		if (*enemy >= 100)
 			*enemy = 0;
@@ -306,7 +368,9 @@ void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
 		enemies[*enemy] = newEnemy;
 		enemies[*enemy].Origin.x = newEnemy.Rect.x;
 		enemies[*enemy].Origin.y = newEnemy.Rect.y;
+		enemies[*enemy].Texture = LoadTexture("StrongerAlien.png");
 		*enemy += 1;
+		
 		if (*enemy >= 100)
 			*enemy = 0;
 	}
@@ -328,9 +392,14 @@ void EnemyMove(Enemy * enemies)
 	{
 		if (enemies[i].Instantiated)
 		{
-			enemies[i].Rect.y += enemies[i].Speed;
-			if (enemies[i].Rect.y > enemies[i].Origin.y + (abs(enemies[i].Speed) * 20) || enemies[i].Rect.y < enemies[i].Origin.y - (abs(enemies[i].Speed) * 20))
+			if (enemies[i].Health > 0 && enemies[i].Rect.y < (450 - enemies[i].Rect.height))
 			{
+				enemies[i].Rect.y += enemies[i].Speed;
+				if (enemies[i].Rect.y > enemies[i].Origin.y + (abs(enemies[i].Speed) * 20) || enemies[i].Rect.y < enemies[i].Origin.y - (abs(enemies[i].Speed) * 20))
+				{
+
+					enemies[i].Speed *= -1;
+				}
 				if (enemies[i].Rect.y > 440)
 				{
 					enemies[i].Rect.y = 440;
@@ -339,7 +408,16 @@ void EnemyMove(Enemy * enemies)
 				{
 					enemies[i].Rect.y = 10;
 				}
-				enemies[i].Speed *= -1;
+			}
+			else if (enemies[i].Health <= 0 && enemies[i].Rect.y < (450 - enemies[i].Rect.height))
+			{
+				enemies[i].Speed = abs(enemies[i].Speed);
+				enemies[i].Rect.y += enemies[i].Speed * 2;
+				enemies[i].Rect.x -= enemies[i].Speed * 2;
+			}
+			else
+			{
+				enemies[i].deathTimer++;
 			}
 		}
 	}
@@ -352,13 +430,15 @@ void EnemyBulletHandler(EnemyBullet * bullet, int * bullets)
 void EnemyInstantiateBullet(EnemyBullet * Arr, int * Size, Enemy enemies)
 {
 	Vector2 TempSize{ 24,6 };
-	EnemyBullet newBullet{ RandomNumber(1,3), 5,{ enemies.Rect.x - enemies.Rect.width - (Arr[*Size].Rect.width / 2),
-		enemies.Rect.y + (enemies.Rect.height / 2),TempSize.x, TempSize.y } };
-	Arr[*Size] = newBullet;
-	*Size += 1;
-	if (*Size >= 100)
-		*Size = 0;
-
+	if (enemies.Health > 0)
+	{
+		EnemyBullet newBullet{ RandomNumber(1,3), 5,{ enemies.Rect.x - enemies.Rect.width - (Arr[*Size].Rect.width / 2),
+			enemies.Rect.y + (enemies.Rect.height / 2),TempSize.x, TempSize.y } };
+		Arr[*Size] = newBullet;
+		*Size += 1;
+		if (*Size >= 100)
+			*Size = 0;
+	}
 }
 void EnemyDrawBullet(EnemyBullet * Arr, int Size)
 {
@@ -366,6 +446,7 @@ void EnemyDrawBullet(EnemyBullet * Arr, int Size)
 	{
 		DrawRectangle(Arr[i].Rect.x, Arr[i].Rect.y,
 			Arr[i].Rect.width, Arr[i].Rect.height, RED);
+		
 	}
 }
 void EnemyMoveBullet(EnemyBullet *Arr, int Size)
@@ -394,9 +475,10 @@ void Animation(Vector2 Pos, int *Frame, int totalFrames,
 {
 	if (*Timer >= TimePerFrame)
 	{
-		(*Frame)++;
+		
 		if (*Frame > totalFrames)
 			*Frame = 1;
+		(*Frame)++;
 		*Timer = 0;
 	}
 	Rectangle Source = { ((texture.width / totalFrames)* (*Frame)), 0, 
@@ -405,7 +487,59 @@ void Animation(Vector2 Pos, int *Frame, int totalFrames,
 	(*Timer)++;
 }
 
+bool AnimateOnce(Vector2 Pos, int *Frame, int totalFrames,
+	Texture2D texture, int * Timer, float TimePerFrame)
+{
+	if (*Timer >= TimePerFrame)
+	{
+		(*Frame)++;
+		*Timer = 0;
+	}
+	Rectangle Source = { ((texture.width / totalFrames)* (*Frame)), 0,
+		(texture.width / totalFrames) , texture.height };
+	DrawTextureRec(texture, Source, { Pos.x, Pos.y }, WHITE);
+	(*Timer)++;
 
+	if (*Frame == totalFrames)
+		return true;
+}
+
+void PowerUpHandler(POWERUP *PowerUp, Player *player)
+{
+
+	(*PowerUp).Rect.x -= (*PowerUp).speed;
+	Animation({ (*PowerUp).Rect.x, (*PowerUp).Rect.y }, 
+		&(*PowerUp).Frame, (*PowerUp).MaxFrames,
+		(*PowerUp).Texture, &(*PowerUp).AnimationTimer, 7);
+
+	if (CheckCollisionRecs((*PowerUp).Rect, (*player).Rect))
+	{
+		if ((*PowerUp).PowerUpType == "Health")
+		{
+			(*player).Health += (*PowerUp).UpgradeAmount;
+			(*PowerUp).Rect.x = 0;
+			(*PowerUp).Rect.y = 0;
+			(*PowerUp).Rect.width = 0;
+			(*PowerUp).Rect.height = 0;
+		}
+		if ((*PowerUp).PowerUpType == "Bullet")
+		{
+			(*player).ShootingCooldown -= (*PowerUp).UpgradeAmount;
+			(*PowerUp).Rect.x = 0;
+			(*PowerUp).Rect.y = 0;
+			(*PowerUp).Rect.width = 0;
+			(*PowerUp).Rect.height = 0;
+		}
+		if ((*PowerUp).PowerUpType == "ForceField")
+		{
+			(*player).ForceFieldTimer = 0;
+			(*PowerUp).Rect.x = 0;
+			(*PowerUp).Rect.y = 0;
+			(*PowerUp).Rect.width = 0;
+			(*PowerUp).Rect.height = 0;
+		}
+	}
+}
 
 
 

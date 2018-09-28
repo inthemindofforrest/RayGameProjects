@@ -29,15 +29,22 @@ int main()
 	bool MainMenu = true;
 	int MenuSelection = 0;
 
-
-	Player player{ 3, DARKBLUE, 4, 0, 0, { 100,100,50,20 } , time(0), 1, 3, "KeyBoard" };
+	Player player{ 3, DARKBLUE, 4, 0, 0, { 100,100,50,20 } , time(0), 1, 3, 25, "KeyBoard", LoadTexture("Rocket.png") };
 	Rock ManyRocks[100]{ 0 };
 	Rock ManySmallRocks[100]{ 0 };
 	Bullet ManyBullets[100]{ 0 };
 	EnemyBullet ManyEnemyBullets[100]{ 0 };
 	Star ManyStars[1000]{ 0 };
 	Enemy enemies[100]{ 0 };
+	
+	POWERUP PowerUp = {"Health",1,2};
 
+	PowerUp.Frame = 1;
+	PowerUp.MaxFrames = 1;
+	/*PowerUp.Rect = { (float)RandomNumber(800,850),
+		(float)RandomNumber((PowerUp.Texture.height / 2),(450 - PowerUp.Texture.height)),
+		50,50 };
+	PowerUp.Texture = LoadTexture("Rocket.png");*/
 
 	int Rocks = 0;
 	int SmallRocks = 0;
@@ -47,14 +54,14 @@ int main()
 	int enemy = 0;
 	int MaxEnemiesOnScreen = 5;
 	float TIMER = 0;
+	int PowerUpCoolDown = 0;
+	Vector2 ScoreMultiplyer = {1,0};
 
 	float ShootCooldown = 0;
 
 
 	//Textures
 	Texture2D PlayersTexture = LoadTexture("Rocket.png");
-	Texture2D MouseTexture = LoadTexture("Mouse.png");
-
 	//Timers
 	time_t StarTimer = time(0);
 	time_t PlayerTimer = time(0);
@@ -75,6 +82,14 @@ int main()
 
 		TIMER++;
 		ShootCooldown++;
+		PowerUpCoolDown++;
+		player.ForceFieldTimer++;
+
+
+
+		for (int i = 0; i < 100; i++)
+			if(enemies[i].Instantiated)
+				enemies[i].Timer++;
 
 		if (IsKeyPressed(KEY_P))
 		{
@@ -84,7 +99,7 @@ int main()
 		if (!MainMenu)
 		{
 
-			if (IsMouseButtonPressed(0) && ShootCooldown >= (25))
+			if (IsMouseButtonPressed(0) && ShootCooldown >= (player.ShootingCooldown))
 			{
 				InstantiateBullet(ManyBullets, &Bullets, player);
 				ShootCooldown = 0;
@@ -104,7 +119,7 @@ int main()
 		if (TIMER >= (60 / 1))
 		{
 			InstantiateRock(ManySmallRocks, &SmallRocks, RandomNumber(3, 6));
-			InstantiateRock(ManyRocks, &Rocks, RandomNumber(12, 18));
+			InstantiateRock(ManyRocks, &Rocks, RandomNumber(8, 10));
 			TIMER = 0;
 		}
 		for (int i = 0; i < 100; i++)
@@ -128,6 +143,54 @@ int main()
 				InstantiateStar(ManyStars, &stars);
 			//UpdateStar(ManyStars, 50);
 		}
+		if (PowerUpCoolDown >= (1200 / 1))
+		{
+			int RandomPowerUpType = RandomNumber(0,3);
+			switch (RandomPowerUpType)
+			{
+			case 0:
+				PowerUp.PowerUpType = "Health";
+				PowerUp.UpgradeAmount = 1;
+				PowerUp.speed == 2;
+				PowerUp.Rect = { 800,
+					(float)RandomNumber((PowerUp.Texture.height / 2),(450 - PowerUp.Texture.height)),
+					50,50 };
+				PowerUp.Texture = LoadTexture("HealthUpgrade.png");
+				PowerUp.Frame = 1;
+				PowerUp.MaxFrames = 3;
+				PowerUp.AnimationTimer = 10;
+				break;
+			case 1:
+				PowerUp.PowerUpType = "Bullet";
+				PowerUp.UpgradeAmount = (3 * (player.ShootingCooldown /10));
+				PowerUp.speed == 2;
+				PowerUp.Rect = { 800,
+					(float)RandomNumber((PowerUp.Texture.height / 2),(450 - PowerUp.Texture.height)),
+					50,50 };
+				PowerUp.Texture = LoadTexture("BulletUpgrade.png");
+				PowerUp.Frame = 1;
+				PowerUp.MaxFrames = 3;
+				PowerUp.AnimationTimer = 10;
+				break;
+			case 2:
+				PowerUp.PowerUpType = "ForceField";
+				PowerUp.speed == 2;
+				PowerUp.Rect = { 800,
+					(float)RandomNumber((PowerUp.Texture.height / 2),(450 - PowerUp.Texture.height)),
+					50,50 };
+				PowerUp.Texture = LoadTexture("ForceFieldUpgrade.png");
+				PowerUp.Frame = 1;
+				PowerUp.MaxFrames = 3;
+				PowerUp.AnimationTimer = 10;
+				break;
+			case 3:
+				break;
+			default:
+				break;
+			}
+			PowerUpCoolDown = 0;
+		}
+
 
 		MoveStar(ManyStars, 1000);
 		DrawStar(ManyStars, 1000);
@@ -137,11 +200,13 @@ int main()
 		if (!MainMenu)
 		{
 			HideCursor();
-			EnemyHandler(enemies, &enemy, ManyBullets, &player.Score, MaxEnemiesOnScreen);
+			EnemyHandler(enemies, &enemy, ManyBullets, &player.Score,
+				&ScoreMultiplyer, MaxEnemiesOnScreen);
 			DisplayScore(player.Score, player.HighScore);
 			BulletHandler(ManyBullets, &Bullets, enemies);
 			EnemyBulletHandler(ManyEnemyBullets, &EnemyBullets);
-			PlayerHandler(&player, &player.AnimationTimer, ManyEnemyBullets, PlayersTexture);
+			PlayerHandler(&player, &player.AnimationTimer, ManyEnemyBullets, enemies);
+			PowerUpHandler(&PowerUp,&player);
 			//DrawTexture(MouseTexture, GetMouseX(), GetMouseY(), WHITE);
 		}
 		else

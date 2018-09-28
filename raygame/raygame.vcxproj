@@ -140,7 +140,13 @@
     <ClInclude Include="MainMenu.h" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="Alien.png" />
+    <Image Include="BulletUpgrade.png" />
+    <Image Include="ForceFieldUpgrade.png" />
+    <Image Include="HealthUpgrade.png" />
     <Image Include="Rocket.png" />
+    <Image Include="StrongerAlien.png" />
+    <Image Include="StrongestAlien.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
