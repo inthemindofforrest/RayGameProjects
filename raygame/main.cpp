@@ -55,6 +55,7 @@ int main()
 	int MaxEnemiesOnScreen = 5;
 	float TIMER = 0;
 	int PowerUpCoolDown = 0;
+	int gameTimer = 0;
 	Vector2 ScoreMultiplyer = {1,0};
 
 	float ShootCooldown = 0;
@@ -85,6 +86,7 @@ int main()
 		PowerUpCoolDown++;
 		player.ForceFieldTimer++;
 
+		
 
 
 		for (int i = 0; i < 100; i++)
@@ -106,6 +108,24 @@ int main()
 			}
 
 			//----------------------------------------------------------------------------------
+		}
+
+		//Display player stats
+		if (IsKeyDown(KEY_Q))
+		{
+			string Speed = "Speed: ";
+			Speed.append(to_string(player.ShootingCooldown));
+			string Shield = "Shield: ";
+			Shield.append(to_string((600 - player.ForceFieldTimer) / 60));
+
+			DrawRectangle(10, 10, 100, 100, LIGHTGRAY);
+			DrawText(Speed.c_str(), 15, 15, 12, BLACK);
+			DrawText(Shield.c_str(), 15, 30, 12, BLACK);
+
+
+
+			if (player.ForceFieldTimer > 601)
+				player.ForceFieldTimer = 601;
 		}
 		// Draw
 		//----------------------------------------------------------------------------------
@@ -207,6 +227,7 @@ int main()
 			EnemyBulletHandler(ManyEnemyBullets, &EnemyBullets);
 			PlayerHandler(&player, &player.AnimationTimer, ManyEnemyBullets, enemies);
 			PowerUpHandler(&PowerUp,&player);
+			RenderObject(ManyBullets, 3, {750,425,10,100});
 			//DrawTexture(MouseTexture, GetMouseX(), GetMouseY(), WHITE);
 		}
 		else

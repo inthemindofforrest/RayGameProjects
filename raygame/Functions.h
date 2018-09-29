@@ -123,7 +123,7 @@ void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Enemy *en
 void PowerUpHandler(POWERUP *PowerUp, Player *player);
 bool AnimateOnce(Vector2 Pos, int *Frame, int totalFrames,
 	Texture2D texture, int * Timer, float TimePerFrame);
-
+void RenderObject(Bullet *Arr, float Rotation, Rectangle Rect);
 void LoadGame(Player *player);
 void SaveGame(Player player);
 //	int screenWidth = 800;

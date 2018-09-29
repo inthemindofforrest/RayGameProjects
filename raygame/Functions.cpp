@@ -113,9 +113,11 @@ void DrawPlayer(Player& player, int * Timer)
 	{
 		DrawRectangle(10 + (i * 20) + 5, 430, 10, 10, RED);
 	}
+	
 
 	if(player.ForceFieldTimer < 600)
-		Animation({ player.Rect.x, player.Rect.y},
+		Animation({ player.Rect.x - ((player.ForceFieldTexture.width / 3) / 2) + (player.Rect.width / 2), 
+			player.Rect.y - ((player.ForceFieldTexture.height) / 2) + (player.Rect.height / 2) },
 			&player.CurrentFrame,
 			player.TotalFrames, player.ForceFieldTexture, Timer, 10);
 		//DrawTexture(player.ForceFieldTexture, player.Rect.x, player.Rect.y, WHITE);
@@ -123,7 +125,6 @@ void DrawPlayer(Player& player, int * Timer)
 }
 
 
-//Max Rocks is 100 (For now....)
 void InstantiateRock(Rock * Arr, int * Size, int RockSize)
 {
 	int SizeToSpeed = RockSize;
@@ -357,6 +358,7 @@ void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
 		enemies[*enemy].Origin.x = newEnemy.Rect.x;
 		enemies[*enemy].Origin.y = newEnemy.Rect.y;
 		enemies[*enemy].Texture = LoadTexture("StrongestAlien.png");
+		
 		*enemy += 1;
 		if (*enemy >= 100)
 			*enemy = 0;
@@ -475,7 +477,6 @@ void Animation(Vector2 Pos, int *Frame, int totalFrames,
 {
 	if (*Timer >= TimePerFrame)
 	{
-		
 		if (*Frame > totalFrames)
 			*Frame = 1;
 		(*Frame)++;
@@ -539,6 +540,15 @@ void PowerUpHandler(POWERUP *PowerUp, Player *player)
 			(*PowerUp).Rect.height = 0;
 		}
 	}
+}
+
+
+//Create an object that can deflect bullets by rotating them and giving them a different
+//Vector2 to move from
+void RenderObject(Bullet *Arr, float Rotation, Rectangle Rect)
+{
+	DrawRectanglePro(Rect, { Rect.x, Rect.y }, Rotation, SKYBLUE);
+
 }
 
 
