@@ -11,25 +11,40 @@
 
 #include "Functions.h"
 #include "MainMenu.h"
+#include "UpgradeWindow.h"
 
 int main()
 {
+	//Notes:
+	//----------------------------------------------------------------
+	/*
+	DeltaTime is the same as GetFrameTime()
+	
+	
+	*/
+	//----------------------------------------------------------------
+
 	// Initialization
 	//--------------------------------------------------------------------------------------
 	int screenWidth = 800;
 	int screenHeight = 450;
 	srand(time(NULL));
 	//InitWindow(screenWidth, screenHeight, "raylib [core] example - basic window");
-	InitWindow(screenWidth, screenHeight, "raylib [texture] example - texture rectangle");
+	InitWindow(screenWidth, screenHeight, "Ray Blaster");
 	SetTargetFPS(60);
 
 	//--------------------------------------------------------------------------------------
 
 	// Main game loop
+	bool Game = true;
+
 	bool MainMenu = true;
 	int MenuSelection = 0;
 
-	Player player{ 3, DARKBLUE, 4, 0, 0, { 100,100,50,20 } , time(0), 1, 3, 25, "KeyBoard", LoadTexture("Rocket.png") };
+	bool Shop = false;
+	int ShopSelection = 0;
+
+	Player player{ 3, DARKBLUE, 4, 0, 0, { 100,100,50,20 } , time(0), 1, 3, 25, "KeyBoard", 600, LoadTexture("Rocket.png") };
 	Rock ManyRocks[100]{ 0 };
 	Rock ManySmallRocks[100]{ 0 };
 	Bullet ManyBullets[100]{ 0 };
@@ -39,12 +54,12 @@ int main()
 	
 	POWERUP PowerUp = {"Health",1,2};
 
+	int Waves = 1;
+	int TotalWaveSpawn = 0;
+	int TotalWaveKilled = 0;
+
 	PowerUp.Frame = 1;
 	PowerUp.MaxFrames = 1;
-	/*PowerUp.Rect = { (float)RandomNumber(800,850),
-		(float)RandomNumber((PowerUp.Texture.height / 2),(450 - PowerUp.Texture.height)),
-		50,50 };
-	PowerUp.Texture = LoadTexture("Rocket.png");*/
 
 	int Rocks = 0;
 	int SmallRocks = 0;
@@ -52,13 +67,16 @@ int main()
 	int EnemyBullets = 0;
 	int stars = 0;
 	int enemy = 0;
-	int MaxEnemiesOnScreen = 5;
+	int MaxEnemiesOnScreen = 10;
 	float TIMER = 0;
 	int PowerUpCoolDown = 0;
 	int gameTimer = 0;
 	Vector2 ScoreMultiplyer = {1,0};
 
 	float ShootCooldown = 0;
+
+	bool BossEnemy = false;
+	bool MediumEnemy = false;
 
 
 	//Textures
@@ -75,7 +93,7 @@ int main()
 	}
 
 	LoadGame(&player);
-	while (!WindowShouldClose())    // Detect window close button or ESC key
+	while (Game)    // Detect window close button or ESC key
 	{
 		// Update
 		//----------------------------------------------------------------------------------
@@ -86,14 +104,12 @@ int main()
 		PowerUpCoolDown++;
 		player.ForceFieldTimer++;
 
-		
-
 
 		for (int i = 0; i < 100; i++)
 			if(enemies[i].Instantiated)
 				enemies[i].Timer++;
 
-		if (IsKeyPressed(KEY_P))
+		if (IsKeyPressed(player.controls.Main_Menu))
 		{
 			MainMenu = !MainMenu;
 			SaveGame(player);
@@ -126,6 +142,12 @@ int main()
 
 			if (player.ForceFieldTimer > 601)
 				player.ForceFieldTimer = 601;
+		}
+		if (IsKeyPressed(KEY_L))
+		{
+			Waves++;
+			TotalWaveKilled = 0;
+			TotalWaveSpawn = 0;
 		}
 		// Draw
 		//----------------------------------------------------------------------------------
@@ -219,16 +241,30 @@ int main()
 
 		if (!MainMenu)
 		{
-			HideCursor();
-			EnemyHandler(enemies, &enemy, ManyBullets, &player.Score,
-				&ScoreMultiplyer, MaxEnemiesOnScreen);
-			DisplayScore(player.Score, player.HighScore);
-			BulletHandler(ManyBullets, &Bullets, enemies);
-			EnemyBulletHandler(ManyEnemyBullets, &EnemyBullets);
-			PlayerHandler(&player, &player.AnimationTimer, ManyEnemyBullets, enemies);
-			PowerUpHandler(&PowerUp,&player);
-			RenderObject(ManyBullets, 3, {750,425,10,100});
-			//DrawTexture(MouseTexture, GetMouseX(), GetMouseY(), WHITE);
+			if (!Shop)
+			{
+				HideCursor();
+				EnemyHandler(enemies, &enemy, ManyBullets, Waves,
+					&ScoreMultiplyer, MaxEnemiesOnScreen,
+					(Waves)-(TotalWaveSpawn + TotalWaveKilled), &TotalWaveSpawn,
+					&TotalWaveKilled, &BossEnemy, &MediumEnemy);
+				DisplayScore(player.Score, player.HighScore);
+				BulletHandler(ManyBullets, &Bullets, enemies);
+				EnemyBulletHandler(ManyEnemyBullets, &EnemyBullets);
+				PlayerHandler(&player, &player.AnimationTimer, ManyEnemyBullets, enemies);
+				PowerUpHandler(&PowerUp, &player);
+
+				if ((Waves)-( TotalWaveKilled) == 0)
+				{
+					StartShop(&Shop);
+					ShowCursor();
+				}
+			}
+			else
+			{
+				UpgradeWindowManager(&player, &Shop, 
+					&Waves, &TotalWaveSpawn, & TotalWaveKilled);
+			}
 		}
 		else
 			ShowCursor();
@@ -237,7 +273,7 @@ int main()
 		//DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
 		if (MainMenu)
 		{
-			if (DisplayMainMenu(&MenuSelection, &MainMenu, &player))
+			if (DisplayMainMenu(&MenuSelection, &MainMenu, &player, &Game))
 				return 0;
 		}
 		EndDrawing();

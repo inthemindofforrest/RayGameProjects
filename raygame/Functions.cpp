@@ -53,19 +53,19 @@ void MovePlayer(Player& player)
 {
 	if (player.Shoot == "KeyBoard")
 	{
-		if (IsKeyDown(KEY_S))
+		if (IsKeyDown(player.controls.Down_Movement))
 		{
 			player.Rect.y += player.Speed;
 		}
-		if (IsKeyDown(KEY_W))
+		if (IsKeyDown(player.controls.Up_Movement))
 		{
 			player.Rect.y -= player.Speed;
 		}
-		if (IsKeyDown(KEY_D))
+		if (IsKeyDown(player.controls.Right_Movement))
 		{
 			player.Rect.x += player.Speed;
 		}
-		if (IsKeyDown(KEY_A))
+		if (IsKeyDown(player.controls.Left_Movement))
 		{
 			player.Rect.x -= player.Speed;
 		}
@@ -251,7 +251,9 @@ int RandomNumberNegToPos(int min, int max)
 		return (rand() % max + min) * - 1;
 }
 
-void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score,Vector2 *scoreMultiplyer, int maxEnemies)
+void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int Wave,
+	Vector2 *scoreMultiplyer, int maxEnemies, int RemainingEnemies,
+	int * TotalEnemiesSpawned, int * TotalEnemiesKilled, bool * Boss, bool * MediumEnemy)
 {
 	string Health;
 	for (int i = 0; i < 100; i++)
@@ -272,13 +274,22 @@ void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score,Ve
 					if (enemies[j].Health <= 0)
 					{
 						if (ColorToInt(enemies[j].color) == ColorToInt(RED))
-							*Score += 20;
+							Wave += 20;
 						else if (ColorToInt(enemies[j].color) == ColorToInt(YELLOW))
-							*Score += 10;
+							Wave += 10;
 						else if (ColorToInt(enemies[j].color) == ColorToInt(GREEN))
-							*Score += 2;
+							Wave += 2;
 						(*scoreMultiplyer).y = j;
 						enemies[j].Texture = LoadTexture("AlienDeath.png");
+						(*TotalEnemiesKilled)++;
+						if (enemies[j].EnemyType == Boss_Enemy)
+						{
+							*Boss = false;
+						}
+						else if (enemies[j].EnemyType == Medium_Enemy)
+						{
+							*MediumEnemy = false;
+						}
 					}
 				}
 				if (enemies[j].Rect.y >= (450 - enemies[i].Rect.height) && enemies[i].IsDead == false)
@@ -296,14 +307,21 @@ void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score,Ve
 					{
 						if (enemies[k].Health > 0)
 						{
-							*Score += 2 * (*scoreMultiplyer).x;
+							Wave += 2 * (*scoreMultiplyer).x;
 							(*scoreMultiplyer).x++;
 						}
 						enemies[k].Health = 0;
-						
+						(*TotalEnemiesKilled)++;
+						if (enemies[j].EnemyType == Boss_Enemy)
+						{
+							*Boss = false;
+						}
+						else if (enemies[j].EnemyType == Medium_Enemy)
+						{
+							*MediumEnemy = false;
+						}
 					}
 				}
-
 			}
 		}
 		Health.append(to_string(enemies[i].Health));
@@ -315,9 +333,10 @@ void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score,Ve
 		}
 		Health.clear();
 	}
-	if (GetEnemies(enemies) < maxEnemies)
+	if (GetEnemies(enemies) < maxEnemies &&  RemainingEnemies > 0)
 	{
-		InstanciateEnemy(enemies, enemy, Score);
+		InstanciateEnemy(enemies, enemy, Wave, Boss, MediumEnemy);
+		(*TotalEnemiesSpawned)++;
 	}
 	EnemyMove(enemies);
 	DrawEnemy(enemies, scoreMultiplyer);
@@ -348,9 +367,9 @@ void DrawEnemy(Enemy * enemies, Vector2 * scoreMultiplyer)
 				}
 		}
 }
-void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
+void InstanciateEnemy(Enemy * enemies, int * enemy, int Waves, bool * Boss, bool * MediumEnemy)
 {
-	if (*Score % 50 == 0 && *Score != 0)
+	if (Waves % 10 == 0 && Waves != 0 && !(*Boss))
 	{
 		Enemy newEnemy{ 15, RED, (float)RandomNumber(1,3) / 3,{ RandomNumber(350,400),RandomNumber(100,250),
 			40,60 }, true,{ newEnemy.Rect.x, newEnemy.Rect.y },{ 0,0 }, RandomNumber(1,5), time(0) };
@@ -358,12 +377,13 @@ void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
 		enemies[*enemy].Origin.x = newEnemy.Rect.x;
 		enemies[*enemy].Origin.y = newEnemy.Rect.y;
 		enemies[*enemy].Texture = LoadTexture("StrongestAlien.png");
-		
 		*enemy += 1;
+		(*Boss) = true;
+		enemies[*enemy].EnemyType = Boss_Enemy;
 		if (*enemy >= 100)
 			*enemy = 0;
 	}
-	if (*Score % 10 == 0 && *Score % 50 != 0 && *Score != 0)
+	if (Waves % 5 == 0 && Waves != 0 && !(*MediumEnemy))
 	{
 		Enemy newEnemy{ 10, YELLOW, (float)RandomNumber(1,3) / 3,{ RandomNumber(350,400),RandomNumber(0,400),
 			30,50 }, true,{ newEnemy.Rect.x, newEnemy.Rect.y },{ 0,0 }, RandomNumber(1,5), time(0) };
@@ -372,7 +392,8 @@ void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
 		enemies[*enemy].Origin.y = newEnemy.Rect.y;
 		enemies[*enemy].Texture = LoadTexture("StrongerAlien.png");
 		*enemy += 1;
-		
+		enemies[*enemy].EnemyType = Medium_Enemy;
+		(*MediumEnemy) = true;
 		if (*enemy >= 100)
 			*enemy = 0;
 	}
@@ -382,6 +403,7 @@ void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score)
 			20,40 }, true ,{ newEnemy.Rect.x, newEnemy.Rect.y },{ 0,0 }, RandomNumber(1,5), time(0) };
 		enemies[*enemy] = newEnemy;
 		*enemy += 1;
+		enemies[*enemy].EnemyType = Beggining_Enemy;
 		if (*enemy >= 100)
 			*enemy = 0;
 	}
@@ -540,15 +562,6 @@ void PowerUpHandler(POWERUP *PowerUp, Player *player)
 			(*PowerUp).Rect.height = 0;
 		}
 	}
-}
-
-
-//Create an object that can deflect bullets by rotating them and giving them a different
-//Vector2 to move from
-void RenderObject(Bullet *Arr, float Rotation, Rectangle Rect)
-{
-	DrawRectanglePro(Rect, { Rect.x, Rect.y }, Rotation, SKYBLUE);
-
 }
 
 

@@ -134,10 +134,12 @@
     <ClCompile Include="Functions.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainMenu.cpp" />
+    <ClCompile Include="UpgradeWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Functions.h" />
     <ClInclude Include="MainMenu.h" />
+    <ClInclude Include="UpgradeWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Alien.png" />

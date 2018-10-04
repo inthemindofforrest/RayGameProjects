@@ -8,6 +8,21 @@
 
 using namespace std;
 
+enum {Beggining_Enemy, Medium_Enemy, Boss_Enemy};
+
+
+class Controls
+{
+public:
+	int Up_Movement = KEY_W;
+	int Down_Movement = KEY_S;
+	int Right_Movement = KEY_D;
+	int Left_Movement = KEY_A;
+
+	int Main_Shoot = MOUSE_LEFT_BUTTON;
+	int Main_Menu = KEY_P;
+};
+
 class Player
 {
 public:
@@ -16,15 +31,21 @@ public:
 	float Speed;
 	int Score;
 	int HighScore;
+
 	Rectangle Rect;
+
 	int AnimationTimer;
 	int CurrentFrame = 1;
 	int TotalFrames = 3;
+
 	int ShootingCooldown;
 	string Shoot;
+	int ForceFieldTimer = 600;
+
 	Texture2D Texture = LoadTexture("Rocket.png");
 	Texture2D ForceFieldTexture = LoadTexture("ForceFieldUpgrade.png");
-	int ForceFieldTimer = 600;
+
+	Controls controls;
 };
 class Rock
 {
@@ -70,6 +91,9 @@ public:
 	int FireRate;
 	time_t Time = time(0);
 
+	int EnemyType;
+
+
 	int Frame = 1;
 	int TotalFrames = 3;
 	int Timer;
@@ -106,9 +130,10 @@ void UpdateStar(Star * Arr, int star);
 void DrawStar(Star * Arr, int Size);
 void MoveStar(Star *Arr, int Size);
 void DisplayScore(int Score, int HigherScore);
-void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int * Score, 
-	Vector2 * scoreMultiplyerint, int  maxEnemies);
-void InstanciateEnemy(Enemy * enemies, int * enemy, int * Score);
+void EnemyHandler(Enemy * enemies, int * enemy, Bullet * bullets, int Wave,
+	Vector2 *scoreMultiplyer, int maxEnemies, int RemainingEnemies,
+	int * TotalEnemiesSpawned, int * TotalEnemiesKilled, bool * Boss, bool * MediumEnemy);
+void InstanciateEnemy(Enemy * enemies, int * enemy, int Waves, bool * Boss, bool * MediumEnemy);
 void DrawEnemy(Enemy * enemies, Vector2 * scoreMultiplyer);
 void BulletHandler(Bullet * bullet, int * bullets, Enemy * enemies);
 int GetEnemies(Enemy * enemies);
@@ -123,7 +148,6 @@ void PlayerHandler(Player* player, int * Timer, EnemyBullet * bullets, Enemy *en
 void PowerUpHandler(POWERUP *PowerUp, Player *player);
 bool AnimateOnce(Vector2 Pos, int *Frame, int totalFrames,
 	Texture2D texture, int * Timer, float TimePerFrame);
-void RenderObject(Bullet *Arr, float Rotation, Rectangle Rect);
 void LoadGame(Player *player);
 void SaveGame(Player player);
 //	int screenWidth = 800;
